@@ -1,29 +1,36 @@
 # Backend — Personal Details API
 
-## 1. Project Overview
-
-Node.js/Express REST API for the full-stack assessment. It handles user registration and authentication (JWT), personal profile CRUD with file attachments, password changes, and document generation (PDF/DOCX).
-
-Data is stored in MongoDB via Mongoose. Protected routes require a valid Bearer token. Uploaded files are saved to the `uploads/` directory and served statically at `/uploads`.
+REST API for the full-stack developer assessment. Handles user authentication, personal profile management with file uploads, and PDF/DOCX document generation.
 
 ---
 
-## 2. Tech Stack
+## Live URLs
+
+| Environment | URL |
+|-------------|-----|
+| **Production API** | https://fullstack-api-w2x9.onrender.com/api |
+| **Health check** | https://fullstack-api-w2x9.onrender.com/api |
+| **Local** | http://localhost:5000/api |
+
+> **Note:** The production API runs on [Render](https://render.com) (free tier). The first request after idle time may take 30–60 seconds (cold start).
+
+---
+
+## Tech Stack
 
 | Category | Technology |
 |----------|------------|
 | Runtime | Node.js |
 | Framework | Express 5 |
 | Database | MongoDB + Mongoose |
-| Authentication | JWT (`jsonwebtoken`) + bcrypt (`bcryptjs`) |
-| File Upload | Multer |
+| Authentication | JWT + bcrypt |
+| File upload | Multer |
 | Documents | PDFKit (PDF), docx (DOCX) |
-| Security | CORS, express-rate-limit, helmet-style headers |
-| Dev Tools | nodemon, mongodb-memory-server (optional) |
+| Security | CORS, express-rate-limit, compression |
 
 ---
 
-## 3. Folder Structure
+## Project Structure
 
 ```
 backend/
@@ -35,31 +42,50 @@ backend/
 │   └── documentController.js    # Generate PDF and DOCX
 ├── middleware/
 │   ├── authMiddleware.js        # JWT verification
-│   ├── uploadMiddleware.js      # Multer file upload config
-│   └── rateLimiter.js           # API and auth rate limits
+│   ├── uploadMiddleware.js      # Multer upload config
+│   └── rateLimiter.js           # Rate limiting
 ├── models/
-│   ├── User.js                  # User schema
-│   └── PersonalDetails.js       # Profile schema
+│   ├── User.js
+│   └── PersonalDetails.js
 ├── routes/
-│   ├── authRoutes.js            # /api/auth/*
-│   ├── profileRoutes.js         # /api/profile/*
-│   └── documentRoutes.js        # /api/documents/*
-├── uploads/                     # Stored file attachments (created at runtime)
-├── server.js                    # App entry point
-├── .env                         # Environment variables (not committed)
+│   ├── authRoutes.js
+│   ├── profileRoutes.js
+│   └── documentRoutes.js
+├── uploads/                     # Uploaded files (runtime, gitignored)
+├── server.js                    # Entry point
+├── .env.example                 # Environment template (safe to commit)
 └── package.json
 ```
 
 ---
 
-## 4. Environment Variables (.env)
+## Run Locally
 
-Create a `.env` file in the `backend` directory:
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- MongoDB Atlas cluster **or** `USE_MEMORY_DB=true` for local dev without Atlas
+
+### Step 1 — Install dependencies
+
+```bash
+cd backend
+npm install
+```
+
+### Step 2 — Configure environment
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env
+```
 
 ```env
 PORT=5000
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>
-JWT_SECRET=your_super_secret_key
+JWT_SECRET=change_this_to_a_long_random_secret
 CLIENT_ORIGIN=http://localhost:4200
 BCRYPT_ROUNDS=10
 USE_MEMORY_DB=false
@@ -67,87 +93,136 @@ USE_MEMORY_DB=false
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PORT` | No | Server port (default: `5000`) |
 | `MONGO_URI` | Yes* | MongoDB connection string |
-| `JWT_SECRET` | Yes | Secret key for signing JWT tokens |
-| `CLIENT_ORIGIN` | No | Allowed frontend origin for CORS (default: `http://localhost:4200`) |
+| `JWT_SECRET` | Yes | Secret for signing JWT tokens |
+| `CLIENT_ORIGIN` | No | Frontend URL for CORS (default: `http://localhost:4200`) |
+| `PORT` | No | Server port (default: `5000`) |
 | `BCRYPT_ROUNDS` | No | Password hashing rounds (default: `10`) |
-| `USE_MEMORY_DB` | No | Set to `true` to use in-memory MongoDB for local dev (no Atlas needed) |
+| `USE_MEMORY_DB` | No | Set `true` to skip Atlas and use in-memory MongoDB |
 
 \* Not required when `USE_MEMORY_DB=true`.
 
-**Important:** Never commit `.env` to version control. Use strong, unique values for `JWT_SECRET` and database credentials in production.
+**Never commit `.env` to Git.**
 
----
-
-## 5. How to Run Locally
-
-**Prerequisites:** Node.js 18+, npm 9+, MongoDB (Atlas or local) — or set `USE_MEMORY_DB=true`
-
-```bash
-cd backend
-npm install
-```
-
-Create `.env` with the variables above, then:
+### Step 3 — Start the server
 
 ```bash
 # Development (auto-restart on file changes)
 npm run dev
 
-# Production
+# Production mode
 npm start
 ```
 
 Server runs at **http://localhost:5000**.
 
-Ensure the Angular frontend is running at `http://localhost:4200` and that `CLIENT_ORIGIN` matches.
+Verify:
 
-**Optional — in-memory database (no MongoDB install):**
-
-```env
-USE_MEMORY_DB=true
+```bash
+curl http://localhost:5000/api
+# {"status":"ok","message":"API is running"}
 ```
+
+### Step 4 — Run the frontend
+
+In a separate terminal:
+
+```bash
+cd ../frontend
+npm install
+npm start
+```
+
+Open **http://localhost:4200** and ensure `CLIENT_ORIGIN=http://localhost:4200` in backend `.env`.
 
 ---
 
-## 6. API Endpoints Table
+## Production Deployment (Render)
 
-Base URL: `http://localhost:5000/api`
+1. Connect the GitHub repo to [Render](https://render.com).
+2. Create a **Web Service** with:
+   - **Root Directory:** `backend`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+3. Add environment variables in the Render dashboard (not in Git):
+
+| Variable | Example |
+|----------|---------|
+| `MONGO_URI` | Your Atlas connection string |
+| `JWT_SECRET` | Strong random secret |
+| `CLIENT_ORIGIN` | `https://full-stack-assesment-pink.vercel.app` |
+| `BCRYPT_ROUNDS` | `10` |
+| `USE_MEMORY_DB` | `false` |
+
+4. Deploy from the `main` branch. Render assigns a public URL and uses its own `PORT` internally.
+
+**CORS:** `CLIENT_ORIGIN` must exactly match the frontend URL (no trailing slash).
+
+---
+
+## API Reference
+
+Base URL: `/api`
+
+### Health
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/` | No | Service status |
+| GET | `/api` | No | API status |
 
 ### Auth — `/api/auth`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/auth/register` | No | Register a new user |
-| POST | `/auth/login` | No | Login and receive JWT token |
+| POST | `/auth/login` | No | Login and receive JWT + `hasProfile` flag |
 | PUT | `/auth/change-password` | Yes | Change password |
 
-**Register body (JSON):**
+**Register (JSON):**
+
 ```json
-{ "username": "john", "email": "john@example.com", "password": "secret123" }
+{
+  "username": "john",
+  "email": "john@example.com",
+  "password": "secret123"
+}
 ```
 
-**Login body (JSON):**
+**Login (JSON):**
+
 ```json
-{ "username": "john", "password": "secret123" }
+{
+  "username": "john",
+  "password": "secret123"
+}
 ```
 
-**Login response:** `{ "token": "...", "user": { "id", "username", "email" } }`
+**Login response:**
 
-Protected routes require header: `Authorization: Bearer <token>`
+```json
+{
+  "success": 1,
+  "message": "Login successful",
+  "token": "<jwt>",
+  "user": { "id": "...", "username": "john", "email": "john@example.com" },
+  "hasProfile": false
+}
+```
 
----
+The `hasProfile` field tells the frontend whether to route the user to the personal-details form or the profile page — without an extra profile GET for new users.
+
+Protected routes require: `Authorization: Bearer <token>`
 
 ### Profile — `/api/profile`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/profile/save` | Yes | Create/save personal details + attachment |
+| POST | `/profile/save` | Yes | Create profile + attachment |
 | GET | `/profile` | Yes | Get current user's profile |
 | PUT | `/profile/update` | Yes | Update profile (attachment optional) |
 
-**Save/update body (multipart/form-data):**
+**Save / update (multipart/form-data):**
 
 | Field | Required (save) | Type |
 |-------|-----------------|------|
@@ -156,57 +231,41 @@ Protected routes require header: `Authorization: Bearer <token>`
 | `email` | Yes | string |
 | `phone_number` | Yes | string |
 | `address` | Yes | string |
-| `attachment` | Yes (save only) | file |
+| `attachment` | Yes (save only) | JPG, PNG, or PDF (max 5 MB) |
 
-**Responses:**
-- `GET /profile` → `404` if no profile exists yet (expected for new users)
-- `POST /profile/save` → `201` on success
-
----
+- `GET /profile` → `404` if no profile exists (called only when the user is known to have a profile)
+- `POST /profile/save` → `201` with profile data on success
 
 ### Documents — `/api/documents`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/documents/:type` | Yes | Download profile as PDF or DOCX (`type` = `pdf` or `docx`) |
+| GET | `/documents/:type` | Yes | Download PDF or DOCX (`type` = `pdf` \| `docx`) |
 
-Returns `404` if profile does not exist.
-
----
-
-### Static Files
+### Static files
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/uploads/:filename` | No | Serve uploaded attachment files |
+| GET | `/uploads/:filename` | No | Serve uploaded attachments |
 
 ---
 
-## 7. File Upload Rules
+## File Upload Rules
 
 | Rule | Value |
 |------|-------|
 | Field name | `attachment` |
-| Allowed types | JPG (`image/jpeg`), PNG (`image/png`), PDF (`application/pdf`) |
-| Max file size | 5 MB |
-| Max files per request | 1 |
+| Allowed types | JPG, PNG, PDF |
+| Max size | 5 MB |
+| Max files | 1 per request |
 | Storage | `backend/uploads/` |
-| Filename format | `{timestamp}_{originalName}` |
-
-**Validation errors:**
-- Missing attachment on save → `400` — "Attachment is required"
-- Invalid type → `400` — "Invalid file type. Only JPG, PNG, and PDF are allowed."
-- File too large → `400` — "File too large. Maximum size is 5MB."
-
-On profile **update**, the attachment is optional; other fields can be updated without re-uploading a file.
 
 ---
 
-## 8. Live API URL
+## Related Links
 
-| Environment | URL |
-|-------------|-----|
-| Local | http://localhost:5000/api |
-| Production | _Not deployed yet — update this section after deployment_ |
-
-When deployed (e.g. Render, Railway, AWS), add the live API base URL here and set `CLIENT_ORIGIN` to your frontend URL in the hosting provider's environment settings.
+| Resource | URL |
+|----------|-----|
+| GitHub repository | https://github.com/ketulporania/full-stack-assesment |
+| Live frontend | https://full-stack-assesment-pink.vercel.app |
+| Frontend README | [../frontend/README.md](../frontend/README.md) |
