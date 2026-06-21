@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, FormGroupDirective } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,6 +55,7 @@ export class ProfilePageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(ProfileService);
   readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
 
   readonly profile = signal<Profile | null>(null);
@@ -103,12 +104,15 @@ export class ProfilePageComponent implements OnInit {
     this.profileService.getProfile().pipe(
       finalize(() => this.profileLoading.set(false))
     ).subscribe({
-      next: (data) => this.profile.set(data),
-      error: (err) => {
-        if (err.status === 404) {
+      next: (data) => {
+        if (!data) {
           this.profile.set(null);
+          this.router.navigate(['/form']);
           return;
         }
+        this.profile.set(data);
+      },
+      error: (err) => {
         const msg = err.error?.message ?? 'Failed to load profile';
         this.profileError.set(msg);
         this.toastr.error(msg, 'Error');

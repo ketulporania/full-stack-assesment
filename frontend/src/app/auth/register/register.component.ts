@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ToastrService } from 'ngx-toastr';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { ProfileService } from '../../services/profile.service';
 
 @Component({
   selector: 'app-register',
@@ -29,6 +30,7 @@ import { AuthService } from '../../services/auth.service';
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
 
@@ -74,6 +76,7 @@ export class RegisterComponent {
       finalize(() => this.loading.set(false))
     ).subscribe({
       next: (res) => {
+        this.profileService.clearHasProfileCache();
         this.toastr.success(res.message, 'Success');
         setTimeout(() => this.router.navigate(['/login']), 500);
       },

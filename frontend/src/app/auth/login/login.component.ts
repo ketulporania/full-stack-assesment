@@ -54,6 +54,7 @@ export class LoginComponent {
     this.auth.login({ username: username!, password: password! }).pipe(
       switchMap((res) => {
         this.toastr.success(res.message, 'Success');
+        this.profileService.clearHasProfileCache();
         return this.profileService.checkHasProfile();
       }),
       finalize(() => this.loading.set(false))

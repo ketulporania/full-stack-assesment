@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface Profile {
@@ -48,15 +48,11 @@ export class ProfileService {
 
   /** Check profile existence via API — use at login or when cache is unknown. */
   checkHasProfile(): Observable<boolean> {
-    return this.http.get<Profile>(`${this.apiUrl}/profile`).pipe(
-      map(() => true),
-      tap(() => this.setHasProfile(true)),
-      catchError(err => {
-        if (err.status === 404) {
-          this.setHasProfile(false);
-          return of(false);
-        }
-        return throwError(() => err);
+    return this.http.get<Profile | null>(`${this.apiUrl}/profile`).pipe(
+      map(profile => {
+        const exists = profile != null;
+        this.setHasProfile(exists);
+        return exists;
       })
     );
   }
@@ -67,11 +63,11 @@ export class ProfileService {
     );
   }
 
-  getProfile(): Observable<Profile> {
-    return this.http.get<Profile>(`${this.apiUrl}/profile`).pipe(
+  getProfile(): Observable<Profile | null> {
+    return this.http.get<Profile | null>(`${this.apiUrl}/profile`).pipe(
       tap(data => {
         this._profile.set(data);
-        this.setHasProfile(true);
+        this.setHasProfile(data != null);
       })
     );
   }
