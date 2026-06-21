@@ -5,8 +5,8 @@ let memoryServer;
 const connectDB = async () => {
   const options = {
     maxPoolSize: 10,
-    minPoolSize: 2,
-    serverSelectionTimeoutMS: 5000,
+    minPoolSize: 1,
+    serverSelectionTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     family: 4
   };
@@ -25,7 +25,9 @@ const connectDB = async () => {
   await mongoose.connect(uri, options);
   console.log(`Connected to MongoDB (${mongoose.connection.name})`);
 
-  await syncPersonalDetailsIndexes();
+  syncPersonalDetailsIndexes().catch(err => {
+    console.warn('Index sync skipped:', err.message);
+  });
 };
 
 async function syncPersonalDetailsIndexes() {

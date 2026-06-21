@@ -30,6 +30,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   lastModified: true
 }));
 
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'Full Stack Assessment API is running' });
+});
+
+app.get('/api', (req, res) => {
+  res.json({ status: 'ok', message: 'API is running' });
+});
+
 app.use('/api', apiLimiter);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/profile', profileRoutes);
@@ -51,11 +59,14 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
+  const port = process.env.PORT || 5000;
+
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
+  });
+
   try {
     await connectDB();
-    app.listen(process.env.PORT || 5000, () => {
-      console.log(`Server running on port ${process.env.PORT || 5000}`);
-    });
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
     process.exit(1);
