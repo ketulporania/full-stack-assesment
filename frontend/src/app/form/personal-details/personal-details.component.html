@@ -1,0 +1,92 @@
+<div class="page-container">
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>Personal Details</mat-card-title>
+      <mat-card-subtitle>Fill in your information below</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Full Name</mat-label>
+          <mat-icon matPrefix>badge</mat-icon>
+          <input matInput formControlName="fullName" placeholder="Enter your full name">
+          @if (form.get('fullName')?.hasError('required') && form.get('fullName')?.touched) {
+            <mat-error>Full name is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Date of Birth</mat-label>
+          <mat-icon matPrefix>cake</mat-icon>
+          <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" placeholder="MM/DD/YYYY">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+          @if (form.get('dateOfBirth')?.hasError('required') && form.get('dateOfBirth')?.touched) {
+            <mat-error>Date of birth is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email Address</mat-label>
+          <mat-icon matPrefix>email</mat-icon>
+          <input matInput type="email" formControlName="email" placeholder="Enter email">
+          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+            <mat-error>Email is required</mat-error>
+          }
+          @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+            <mat-error>Invalid email format</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Mobile Number</mat-label>
+          <mat-icon matPrefix>phone</mat-icon>
+          <input matInput formControlName="mobileNumber" placeholder="10-digit mobile number">
+          @if (form.get('mobileNumber')?.hasError('required') && form.get('mobileNumber')?.touched) {
+            <mat-error>Mobile number is required</mat-error>
+          }
+          @if (form.get('mobileNumber')?.hasError('pattern') && form.get('mobileNumber')?.touched) {
+            <mat-error>Enter a valid 10-digit number</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Address</mat-label>
+          <mat-icon matPrefix>home</mat-icon>
+          <textarea matInput formControlName="address" rows="3" placeholder="Enter your address"></textarea>
+          @if (form.get('address')?.hasError('required') && form.get('address')?.touched) {
+            <mat-error>Address is required</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- File Upload -->
+        <div class="file-upload-section" [class.has-error]="fileTouched() && !selectedFile()">
+          <label class="upload-label">Attachment <span class="required-mark">*</span> (JPG, PNG, PDF — Max 5MB)</label>
+          <div class="upload-row">
+            <button mat-stroked-button type="button" color="primary" (click)="fileInput.click()">
+              <mat-icon>attach_file</mat-icon> Choose File
+            </button>
+            @if (selectedFile()) {
+              <span class="file-name">
+                {{ selectedFile()!.name }} ({{ formatFileSize(selectedFile()!.size) }})
+              </span>
+            } @else {
+              <span class="no-file">No file chosen</span>
+            }
+          </div>
+          <input #fileInput type="file" hidden accept=".jpg,.jpeg,.png,.pdf" (change)="onFileSelect($event)">
+          @if (fileError()) {
+            <div class="file-error">{{ fileError() }}</div>
+          }
+        </div>
+
+        <button mat-raised-button color="primary" type="submit" class="full-width submit-btn" [disabled]="loading()">
+          {{ loading() ? 'Saving...' : 'Submit' }}
+        </button>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
