@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const PersonalDetails = require('../models/PersonalDetails');
 
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 10;
 
@@ -70,11 +71,14 @@ exports.login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const hasProfile = !!(await PersonalDetails.exists({ user_id: user._id }));
+
     res.json({
       success: 1,
       message: 'Login successful',
       token,
-      user: { id: user._id, username: user.username, email: user.email }
+      user: { id: user._id, username: user.username, email: user.email },
+      hasProfile
     });
   } catch {
     res.status(500).json({ error: 1, message: 'Server error' });

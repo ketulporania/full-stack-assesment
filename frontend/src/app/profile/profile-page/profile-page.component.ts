@@ -96,6 +96,18 @@ export class ProfilePageComponent implements OnInit {
   }, { validators: this.passwordMatchValidator });
 
   ngOnInit(): void {
+    if (!this.profileService.getCachedHasProfile()) {
+      this.profileLoading.set(false);
+      return;
+    }
+
+    const cached = this.profileService.profile();
+    if (cached) {
+      this.profile.set(cached);
+      this.profileLoading.set(false);
+      return;
+    }
+
     this.loadProfile();
   }
 
@@ -104,15 +116,13 @@ export class ProfilePageComponent implements OnInit {
     this.profileService.getProfile().pipe(
       finalize(() => this.profileLoading.set(false))
     ).subscribe({
-      next: (data) => {
-        if (!data) {
-          this.profile.set(null);
+      next: (data) => this.profile.set(data),
+      error: (err) => {
+        if (err.status === 404) {
+          this.profileService.setHasProfile(false);
           this.router.navigate(['/form']);
           return;
         }
-        this.profile.set(data);
-      },
-      error: (err) => {
         const msg = err.error?.message ?? 'Failed to load profile';
         this.profileError.set(msg);
         this.toastr.error(msg, 'Error');

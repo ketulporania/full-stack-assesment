@@ -76,7 +76,7 @@ export class RegisterComponent {
       finalize(() => this.loading.set(false))
     ).subscribe({
       next: (res) => {
-        this.profileService.clearHasProfileCache();
+        this.profileService.prepareForSession(false);
         this.toastr.success(res.message, 'Success');
         setTimeout(() => this.router.navigate(['/login']), 500);
       },

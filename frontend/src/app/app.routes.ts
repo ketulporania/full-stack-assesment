@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
-import { noProfileGuard } from './guards/profile.guard';
+import { hasProfileGuard, noProfileGuard } from './guards/profile.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -20,7 +20,7 @@ export const routes: Routes = [
   {
     path: 'profile',
     loadComponent: () => import('./profile/profile-page/profile-page.component').then(m => m.ProfilePageComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, hasProfileGuard]
   },
   { path: '**', redirectTo: 'login' }
 ];

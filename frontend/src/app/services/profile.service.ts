@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, finalize, of, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface Profile {
@@ -24,14 +24,12 @@ export class ProfileService {
   private readonly _profile = signal<Profile | null>(null);
   readonly profile = this._profile.asReadonly();
 
+  private profileRequest$: Observable<Profile> | null = null;
+
   private readHasProfileCache(): boolean | null {
     const value = localStorage.getItem(HAS_PROFILE_KEY);
     if (value === null) return null;
     return value === 'true';
-  }
-
-  isProfileCached(): boolean {
-    return this.readHasProfileCache() !== null;
   }
 
   getCachedHasProfile(): boolean {
@@ -46,30 +44,47 @@ export class ProfileService {
     localStorage.removeItem(HAS_PROFILE_KEY);
   }
 
-  /** Check profile existence via API — use at login or when cache is unknown. */
-  checkHasProfile(): Observable<boolean> {
-    return this.http.get<Profile | null>(`${this.apiUrl}/profile`).pipe(
-      map(profile => {
-        const exists = profile != null;
-        this.setHasProfile(exists);
-        return exists;
+  /** Reset in-memory profile after login/register so GET runs at most once per session. */
+  prepareForSession(hasProfile: boolean): void {
+    this._profile.set(null);
+    this.profileRequest$ = null;
+    this.setHasProfile(hasProfile);
+  }
+
+  saveProfile(formData: FormData): Observable<{ message?: string; data: Profile }> {
+    return this.http.post<{ message?: string; data: Profile }>(`${this.apiUrl}/profile/save`, formData).pipe(
+      tap(res => {
+        if (res.data) {
+          this._profile.set(res.data);
+        }
+        this.setHasProfile(true);
       })
     );
   }
 
-  saveProfile(formData: FormData): Observable<{ message?: string }> {
-    return this.http.post<{ message?: string }>(`${this.apiUrl}/profile/save`, formData).pipe(
-      tap(() => this.setHasProfile(true))
-    );
-  }
+  /** Returns cached profile or a single shared GET request — never duplicates in-flight calls. */
+  getProfile(forceRefresh = false): Observable<Profile> {
+    const cached = this._profile();
+    if (!forceRefresh && cached) {
+      return of(cached);
+    }
 
-  getProfile(): Observable<Profile | null> {
-    return this.http.get<Profile | null>(`${this.apiUrl}/profile`).pipe(
+    if (!forceRefresh && this.profileRequest$) {
+      return this.profileRequest$;
+    }
+
+    this.profileRequest$ = this.http.get<Profile>(`${this.apiUrl}/profile`).pipe(
       tap(data => {
         this._profile.set(data);
-        this.setHasProfile(data != null);
+        this.setHasProfile(true);
+      }),
+      shareReplay(1),
+      finalize(() => {
+        this.profileRequest$ = null;
       })
     );
+
+    return this.profileRequest$;
   }
 
   updateProfile(formData: FormData): Observable<{ message?: string; data: Profile }> {
@@ -86,6 +101,7 @@ export class ProfileService {
 
   clearProfile(): void {
     this._profile.set(null);
+    this.profileRequest$ = null;
     this.clearHasProfileCache();
   }
 

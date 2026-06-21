@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { ProfileService } from './profile.service';
 
 export interface AuthUser {
   id: string;
@@ -14,6 +15,7 @@ export interface AuthUser {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly profileService = inject(ProfileService);
   private readonly apiUrl = environment.apiUrl;
 
   private readonly _token = signal<string | null>(localStorage.getItem('token'));
@@ -29,8 +31,18 @@ export class AuthService {
     return this.http.post<{ message?: string }>(`${this.apiUrl}/auth/register`, data);
   }
 
-  login(data: { username: string; password: string }): Observable<{ token: string; user: AuthUser; message?: string }> {
-    return this.http.post<{ token: string; user: AuthUser; message?: string }>(
+  login(data: { username: string; password: string }): Observable<{
+    token: string;
+    user: AuthUser;
+    message?: string;
+    hasProfile: boolean;
+  }> {
+    return this.http.post<{
+      token: string;
+      user: AuthUser;
+      message?: string;
+      hasProfile: boolean;
+    }>(
       `${this.apiUrl}/auth/login`,
       data
     ).pipe(
@@ -46,9 +58,9 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('hasProfile');
     this._token.set(null);
     this._user.set(null);
+    this.profileService.clearProfile();
     this.router.navigate(['/login']);
   }
 

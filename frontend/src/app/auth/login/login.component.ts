@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { ToastrService } from 'ngx-toastr';
-import { finalize, switchMap } from 'rxjs';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ProfileService } from '../../services/profile.service';
 
@@ -52,15 +52,12 @@ export class LoginComponent {
     const { username, password } = this.form.getRawValue();
 
     this.auth.login({ username: username!, password: password! }).pipe(
-      switchMap((res) => {
-        this.toastr.success(res.message, 'Success');
-        this.profileService.clearHasProfileCache();
-        return this.profileService.checkHasProfile();
-      }),
       finalize(() => this.loading.set(false))
     ).subscribe({
-      next: (hasProfile) => {
-        this.router.navigate([hasProfile ? '/profile' : '/form']);
+      next: (res) => {
+        this.toastr.success(res.message, 'Success');
+        this.profileService.prepareForSession(res.hasProfile);
+        this.router.navigate([res.hasProfile ? '/profile' : '/form']);
       },
       error: (err) => {
         this.toastr.error(err.error?.message, 'Error');
