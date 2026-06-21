@@ -1,0 +1,436 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="top-bar">
+    <h2 class="app-title">
+      <mat-icon>account_circle</mat-icon> My Profile
+    </h2>
+    <button mat-raised-button class="logout-btn" (click)="logout()">
+      <mat-icon>logout</mat-icon> Logout
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (profileLoading()) {
+    <div class="loading-center">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading profile...</p>
+    </div>
+  }
+
+  <!-- Main Content -->
+  @if (!profileLoading()) {
+    <div class="content-grid">
+      <mat-tab-group animationDuration="300ms" color="primary" dynamicHeight>
+
+        <!-- TAB 1: View / Edit Profile -->
+        <mat-tab label="Profile Details">
+          @if (profile() && !editMode()) {
+            <div class="tab-content profile-tab">
+              <div class="profile-view">
+                <div class="profile-view-header">
+                  <div class="profile-avatar">
+                    <mat-icon>person</mat-icon>
+                  </div>
+                  <div class="profile-summary">
+                    <h3 class="profile-name">{{ profile()!['full_name'] }}</h3>
+                    <p class="profile-meta">{{ profile()!['email'] }}</p>
+                  </div>
+                  <button mat-stroked-button color="primary" class="edit-profile-btn" (click)="startEdit()">
+                    <mat-icon>edit</mat-icon>
+                    Edit Profile
+                  </button>
+                </div>
+
+                <div class="profile-section">
+                  <h4 class="section-title">
+                    <mat-icon>badge</mat-icon>
+                    Personal Information
+                  </h4>
+                  <div class="profile-grid">
+                    <div class="info-item">
+                      <div class="info-icon-wrap">
+                        <mat-icon>badge</mat-icon>
+                      </div>
+                      <div class="info-content">
+                        <div class="info-label">Full Name</div>
+                        <div class="info-value">{{ profile()!['full_name'] }}</div>
+                      </div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-icon-wrap">
+                        <mat-icon>cake</mat-icon>
+                      </div>
+                      <div class="info-content">
+                        <div class="info-label">Date of Birth</div>
+                        <div class="info-value">{{ profile()!['date_of_birth'] | date:'longDate' }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="profile-section">
+                  <h4 class="section-title">
+                    <mat-icon>contact_mail</mat-icon>
+                    Contact Details
+                  </h4>
+                  <div class="profile-grid">
+                    <div class="info-item">
+                      <div class="info-icon-wrap">
+                        <mat-icon>email</mat-icon>
+                      </div>
+                      <div class="info-content">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">{{ profile()!['email'] }}</div>
+                      </div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-icon-wrap">
+                        <mat-icon>phone</mat-icon>
+                      </div>
+                      <div class="info-content">
+                        <div class="info-label">Mobile</div>
+                        <div class="info-value">{{ profile()!['phone_number'] }}</div>
+                      </div>
+                    </div>
+                    <div class="info-item full-span">
+                      <div class="info-icon-wrap">
+                        <mat-icon>home</mat-icon>
+                      </div>
+                      <div class="info-content">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">{{ profile()!['address'] }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                @if (profile()!['attachment']?.['file_name']) {
+                  <div class="profile-section">
+                    <h4 class="section-title">
+                      <mat-icon>attach_file</mat-icon>
+                      Attachment
+                    </h4>
+                    <div class="attachment-card">
+                      <div class="attachment-icon-wrap">
+                        <mat-icon>description</mat-icon>
+                      </div>
+                      <div class="attachment-details">
+                        <div class="attachment-name">{{ profile()!['attachment']?.['original_name'] }}</div>
+                        <div class="attachment-meta">Uploaded document</div>
+                      </div>
+                      <a
+                        mat-stroked-button
+                        color="primary"
+                        [href]="getFileUrl(profile()!['attachment']?.['path'] ?? '')"
+                        target="_blank"
+                        class="attachment-open-btn">
+                        <mat-icon>open_in_new</mat-icon>
+                        View
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Edit Mode -->
+          @if (editMode()) {
+            <div class="tab-content edit-tab">
+              <div class="edit-profile-card">
+                <div class="edit-profile-header">
+                  <div class="edit-header-icon">
+                    <mat-icon>edit</mat-icon>
+                  </div>
+                  <div class="edit-header-text">
+                    <h3 class="edit-title">Edit Profile</h3>
+                    <p class="edit-subtitle">Update your personal details and save changes.</p>
+                  </div>
+                  <button mat-stroked-button type="button" class="edit-cancel-top" (click)="cancelEdit()">
+                    Cancel
+                  </button>
+                </div>
+
+                <form [formGroup]="editForm" (ngSubmit)="onUpdateProfile()" class="edit-form">
+                  <div class="edit-section">
+                    <h4 class="section-title">
+                      <mat-icon>badge</mat-icon>
+                      Personal Information
+                    </h4>
+                    <div class="edit-grid">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Full Name</mat-label>
+                        <mat-icon matPrefix>badge</mat-icon>
+                        <input matInput formControlName="fullName">
+                        @if (editForm.get('fullName')?.hasError('required') && editForm.get('fullName')?.touched) {
+                          <mat-error>Required</mat-error>
+                        }
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Date of Birth</mat-label>
+                        <mat-icon matPrefix>cake</mat-icon>
+                        <input matInput [matDatepicker]="editPicker" formControlName="dateOfBirth">
+                        <mat-datepicker-toggle matSuffix [for]="editPicker"></mat-datepicker-toggle>
+                        <mat-datepicker #editPicker></mat-datepicker>
+                        @if (editForm.get('dateOfBirth')?.hasError('required') && editForm.get('dateOfBirth')?.touched) {
+                          <mat-error>Required</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div class="edit-section">
+                    <h4 class="section-title">
+                      <mat-icon>contact_mail</mat-icon>
+                      Contact Details
+                    </h4>
+                    <div class="edit-grid">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Email</mat-label>
+                        <mat-icon matPrefix>email</mat-icon>
+                        <input matInput type="email" formControlName="email">
+                        @if (editForm.get('email')?.hasError('required') && editForm.get('email')?.touched) {
+                          <mat-error>Required</mat-error>
+                        }
+                        @if (editForm.get('email')?.hasError('email') && editForm.get('email')?.touched) {
+                          <mat-error>Invalid email</mat-error>
+                        }
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Mobile Number</mat-label>
+                        <mat-icon matPrefix>phone</mat-icon>
+                        <input matInput formControlName="mobileNumber">
+                        @if (editForm.get('mobileNumber')?.hasError('required') && editForm.get('mobileNumber')?.touched) {
+                          <mat-error>Required</mat-error>
+                        }
+                        @if (editForm.get('mobileNumber')?.hasError('pattern') && editForm.get('mobileNumber')?.touched) {
+                          <mat-error>Enter a valid 10-digit number</mat-error>
+                        }
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" class="full-width full-span">
+                        <mat-label>Address</mat-label>
+                        <mat-icon matPrefix>home</mat-icon>
+                        <textarea matInput formControlName="address" rows="3"></textarea>
+                        @if (editForm.get('address')?.hasError('required') && editForm.get('address')?.touched) {
+                          <mat-error>Required</mat-error>
+                        }
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div class="edit-section">
+                    <h4 class="section-title">
+                      <mat-icon>attach_file</mat-icon>
+                      Attachment
+                    </h4>
+                    <div class="edit-upload-card">
+                      <div class="edit-upload-info">
+                        <mat-icon>cloud_upload</mat-icon>
+                        <div>
+                          <div class="edit-upload-title">Upload document</div>
+                          <div class="edit-upload-hint">JPG, PNG, or PDF — Max 5MB</div>
+                        </div>
+                      </div>
+
+                      @if (profile()!['attachment']?.['file_name'] && !selectedFile()) {
+                        <div class="edit-current-file">
+                          <mat-icon>description</mat-icon>
+                          <span class="edit-current-name">{{ profile()!['attachment']?.['original_name'] }}</span>
+                          <a
+                            mat-button
+                            color="primary"
+                            [href]="getFileUrl(profile()!['attachment']?.['path'] ?? '')"
+                            target="_blank">
+                            View
+                          </a>
+                        </div>
+                      }
+
+                      <div class="edit-upload-actions">
+                        <button mat-stroked-button type="button" color="primary" (click)="fileInput.click()">
+                          <mat-icon>attach_file</mat-icon>
+                          {{ profile()!['attachment']?.['file_name'] || selectedFile() ? 'Replace File' : 'Choose File' }}
+                        </button>
+                        @if (selectedFile()) {
+                          <span class="file-name-badge">
+                            {{ selectedFile()!.name }} ({{ formatFileSize(selectedFile()!.size) }})
+                          </span>
+                        } @else if (!profile()!['attachment']?.['file_name']) {
+                          <span class="no-file">No file chosen</span>
+                        }
+                      </div>
+                      <input #fileInput type="file" hidden accept=".jpg,.jpeg,.png,.pdf" (change)="onFileSelect($event)">
+                      @if (fileError()) {
+                        <div class="file-error">{{ fileError() }}</div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="edit-actions">
+                    <button mat-stroked-button type="button" class="edit-action-btn" (click)="cancelEdit()">
+                      Cancel
+                    </button>
+                    <button mat-flat-button color="primary" type="submit" class="edit-action-btn edit-action-primary" [disabled]="editLoading()">
+                      @if (editLoading()) {
+                        <span class="edit-action-content">
+                          <mat-spinner diameter="18"></mat-spinner>
+                          <span>Saving...</span>
+                        </span>
+                      } @else {
+                        <span class="edit-action-content">
+                          <mat-icon>save</mat-icon>
+                          <span>Save Changes</span>
+                        </span>
+                      }
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          }
+
+          @if (!profile() && !editMode()) {
+            <div class="no-profile tab-content">
+              <mat-icon>info</mat-icon>
+              <p>No profile data found. <a routerLink="/form">Fill in your details</a>.</p>
+            </div>
+          }
+        </mat-tab>
+
+        <!-- TAB 2: Download Documents -->
+        <mat-tab label="Document Generation">
+          <div class="tab-content download-tab">
+            <div class="download-section">
+              <div class="download-card">
+                <div class="download-card-header">
+                  <div class="download-icon-wrap">
+                    <mat-icon>cloud_download</mat-icon>
+                  </div>
+                  <div>
+                    <h3 class="download-title">Export Personal Details</h3>
+                    <p class="download-description">
+                      Choose a format and download your profile as a ready-to-use document.
+                    </p>
+                  </div>
+                </div>
+
+                <p class="format-section-label">Select document format</p>
+                <div class="format-options" role="radiogroup" aria-label="Document format">
+                  @for (format of documentFormats; track format.value) {
+                    <button
+                      type="button"
+                      class="format-option"
+                      role="radio"
+                      [attr.aria-checked]="selectedDocumentType() === format.value"
+                      [class.selected]="selectedDocumentType() === format.value"
+                      (click)="selectedDocumentType.set(format.value)">
+                      @if (selectedDocumentType() === format.value) {
+                        <span class="format-check">
+                          <mat-icon>check_circle</mat-icon>
+                        </span>
+                      }
+                      <mat-icon class="format-option-icon">{{ format.icon }}</mat-icon>
+                      <span class="format-option-label">{{ format.label }}</span>
+                      <span class="format-option-ext">.{{ format.value }}</span>
+                      <span class="format-option-hint">{{ format.hint }}</span>
+                    </button>
+                  }
+                </div>
+
+                <button
+                  mat-raised-button
+                  color="primary"
+                  class="download-action"
+                  (click)="onDownloadDocument()"
+                  [disabled]="downloadingDocument() || !profile()">
+                  <span class="download-action-content">
+                    @if (downloadingDocument()) {
+                      <mat-spinner diameter="20"></mat-spinner>
+                      <span>Generating {{ selectedDocumentType() | uppercase }}...</span>
+                    } @else {
+                      <mat-icon>download</mat-icon>
+                      <span>Download {{ selectedFormat().label }}</span>
+                    }
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- TAB 3: Change Password -->
+        <mat-tab label="Change Password">
+          <div class="tab-content password-tab">
+            <div class="password-card">
+              <div class="password-card-header">
+                <div class="password-icon-wrap">
+                  <mat-icon>lock</mat-icon>
+                </div>
+                <div>
+                  <h3 class="password-title">Update Password</h3>
+                  <p class="password-description">Use a strong password with at least 6 characters.</p>
+                </div>
+              </div>
+
+              <form [formGroup]="passwordForm" #passwordFormDir="ngForm" (ngSubmit)="onChangePassword()">
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Old Password</mat-label>
+                <mat-icon matPrefix>lock_open</mat-icon>
+                <input matInput [type]="hideOld() ? 'password' : 'text'" formControlName="oldPassword">
+                <button mat-icon-button matSuffix type="button" (click)="hideOld.set(!hideOld())">
+                  <mat-icon>{{ hideOld() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                @if (passwordForm.get('oldPassword')?.hasError('required') && passwordForm.get('oldPassword')?.touched) {
+                  <mat-error>Required</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>New Password</mat-label>
+                <mat-icon matPrefix>lock</mat-icon>
+                <input matInput [type]="hideNew() ? 'password' : 'text'" formControlName="newPassword">
+                <button mat-icon-button matSuffix type="button" (click)="hideNew.set(!hideNew())">
+                  <mat-icon>{{ hideNew() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                @if (passwordForm.get('newPassword')?.hasError('required') && passwordForm.get('newPassword')?.touched) {
+                  <mat-error>Required</mat-error>
+                }
+                @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
+                  <mat-error>Min 6 characters</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Confirm New Password</mat-label>
+                <mat-icon matPrefix>lock_outline</mat-icon>
+                <input matInput [type]="hideConfirm() ? 'password' : 'text'" formControlName="confirmPassword">
+                <button mat-icon-button matSuffix type="button" (click)="hideConfirm.set(!hideConfirm())">
+                  <mat-icon>{{ hideConfirm() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                @if (passwordForm.get('confirmPassword')?.hasError('required') && passwordForm.get('confirmPassword')?.touched) {
+                  <mat-error>Required</mat-error>
+                }
+                @if (passwordForm.errors?.['passwordMismatch'] && passwordForm.get('confirmPassword')?.touched) {
+                  <mat-error>Passwords do not match</mat-error>
+                }
+              </mat-form-field>
+
+              <button mat-raised-button color="primary" type="submit" class="password-submit" [disabled]="passwordLoading()">
+                {{ passwordLoading() ? 'Changing...' : 'Change Password' }}
+              </button>
+
+              </form>
+            </div>
+          </div>
+        </mat-tab>
+
+      </mat-tab-group>
+    </div>
+  }
+
+</div>
