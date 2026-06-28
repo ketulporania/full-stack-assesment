@@ -267,5 +267,5 @@ Protected routes require: `Authorization: Bearer <token>`
 | Resource | URL |
 |----------|-----|
 | GitHub repository | https://github.com/ketulporania/full-stack-assesment |
-| Live frontend | https://full-stack-assesment-pink.vercel.app |
+| Live frontend | https://user-profile-management-pink.vercel.app |
 | Frontend README | [../frontend/README.md](../frontend/README.md) |

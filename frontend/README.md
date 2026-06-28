@@ -8,7 +8,7 @@ Angular single-page application for the full-stack developer assessment. Users c
 
 | Environment | URL |
 |-------------|-----|
-| **Production app** | https://full-stack-assesment-pink.vercel.app |
+| **Production app** | https://user-profile-management-pink.vercel.app |
 | **Production API** | https://fullstack-api-w2x9.onrender.com/api |
 | **Local** | http://localhost:4200 |
 
